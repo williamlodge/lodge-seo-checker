@@ -65,3 +65,12 @@ describe('parsePage', () => {
     expect(a1.simhash).not.toBe(b.simhash);
   });
 });
+
+describe('parsePage heading/image inventory', () => {
+  it('collects heading tag names in order and total image count', () => {
+    const r = parsePage({ url: 'https://ex.com/h', finalUrl: 'https://ex.com/h', status: 200, redirectChain: [], headers: {}, body: '<html><body><h1>T</h1><h3>x</h3><h2>y</h2><img src="a.png" alt="a"><img src="b.png"></body></html>' });
+    expect(r.headings).toEqual(['h1', 'h3', 'h2']);
+    expect(r.imgTotal).toBe(2);
+    expect(r.imagesMissingAlt).toBe(1);
+  });
+});

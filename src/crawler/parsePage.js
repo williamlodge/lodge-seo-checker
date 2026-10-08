@@ -69,7 +69,11 @@ export function parsePage({ url, finalUrl, status, redirectChain, headers, body 
     } catch { /* skip malformed */ }
   });
 
+  const headings = [];
+  $('h1, h2, h3, h4, h5, h6').each((_, el) => headings.push(el.tagName.toLowerCase()));
+
   let imagesMissingAlt = 0;
+  const imgTotal = $('img').length;
   $('img').each((_, el) => {
     const alt = $(el).attr('alt');
     if (alt === undefined || !alt.trim()) imagesMissingAlt++;
@@ -111,7 +115,9 @@ export function parsePage({ url, finalUrl, status, redirectChain, headers, body 
     hreflang,
     simhash: simhash64(text),
     linksOut: linksOut.map((l) => l.href),
+    headings,
     imagesMissingAlt,
+    imgTotal,
     bytesHtml: (body ?? '').length,
     jsonld,
     invalidJsonld,

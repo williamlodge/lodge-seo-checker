@@ -219,6 +219,8 @@ export function createApp(opts = {}) {
 
   const pub = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
   app.use(express.static(pub));
+  // SPA deep link for shared reports: /r/<token>
+  app.get('/r/:token', (req, res) => res.sendFile(join(pub, 'index.html')));
 
   return app;
 }

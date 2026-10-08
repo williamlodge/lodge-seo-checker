@@ -18,7 +18,7 @@ function Landing({ onStart }) {
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true); setErr('');
-    try { onStart(await api('/api/scan', { method: 'POST', body: JSON.stringify({ url }) })); }
+    try { onStart(await api('api/scan', { method: 'POST', body: JSON.stringify({ url }) })); }
     catch (e2) { setErr(e2.message); }
     finally { setBusy(false); }
   };
@@ -50,7 +50,7 @@ function Progress({ id, onDone }) {
   useEffect(() => {
     const t = setInterval(async () => {
       try {
-        const st = await api(`/api/scan/${id}`);
+        const st = await api(`api/scan/${id}`);
         setS(st);
         if (st.status === 'done' || st.status === 'error') { clearInterval(t); onDone(st); }
       } catch { /* retry */ }
@@ -120,13 +120,13 @@ function Report({ token }) {
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => setData(await api(`/api/report/${token}`)), [token]);
+  const load = useCallback(async () => setData(await api(`api/report/${token}`)), [token]);
   useEffect(() => { load().catch((e) => setErr(e.message)); }, [load]);
 
   const unlock = async (e) => {
     e.preventDefault();
     setBusy(true); setErr('');
-    try { setData(await api(`/api/report/${token}/unlock`, { method: 'POST', body: JSON.stringify({ email }) })); }
+    try { setData(await api(`api/report/${token}/unlock`, { method: 'POST', body: JSON.stringify({ email }) })); }
     catch (e2) { setErr(e2.message); }
     finally { setBusy(false); }
   };

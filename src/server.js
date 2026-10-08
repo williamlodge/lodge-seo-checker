@@ -81,8 +81,11 @@ export function createApp(opts = {}) {
 
   const db = openDb(dbPath);
   const app = express();
+  const base = (process.env.BASE_PATH ?? '').replace(/\/$/, '');
   app.set('trust proxy', 1); // loopback LiteSpeed reverse proxy
   app.use(express.json());
+
+  const router = express.Router();
 
   // ---- scan queue: max N concurrent, overflow waits (still accepted 202) ----
   let running = 0;
@@ -146,7 +149,7 @@ export function createApp(opts = {}) {
     keyFn: (req) => `scan:${ipHash(req)}`,
   });
 
-  app.post('/api/scan', async (req, res) => {
+  router.post('/api/scan', async (req, res) => {
     const url = String(req.body?.url ?? '').trim();
     if (!isPublicHttpUrl(url) && !(allowPrivate && /^https?:\/\//.test(url))) {
       return res.status(400).json({ error: 'Provide a valid public http(s) URL' });
@@ -167,7 +170,7 @@ export function createApp(opts = {}) {
     res.status(202).json({ id: scan.id, token: scan.share_token });
   });
 
-  app.get('/api/scan/:id', (req, res) => {
+  router.get('/api/scan/:id', (req, res) => {
     const s = db.getScan(Number(req.params.id));
     if (!s) return res.status(404).json({ error: 'Scan not found' });
     res.json({
@@ -189,7 +192,7 @@ export function createApp(opts = {}) {
     return { scan: s, report };
   }
 
-  app.get('/api/report/:token', (req, res) => {
+  router.get('/api/report/:token', (req, res) => {
     const p = reportPayload(req.params.token);
     if (!p) return res.status(404).json({ error: 'Report not found' });
     const { scan, report } = p;
@@ -207,7 +210,7 @@ export function createApp(opts = {}) {
     });
   });
 
-  app.post('/api/report/:token/unlock', async (req, res) => {
+  router.post('/api/report/:token/unlock', async (req, res) => {
     const s = db.getReportByToken(req.params.token);
     if (!s) return res.status(404).json({ error: 'Report not found' });
     const email = String(req.body?.email ?? '').trim();
@@ -227,9 +230,10 @@ export function createApp(opts = {}) {
   });
 
   const pub = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
-  app.use(express.static(pub));
+  app.use(base, express.static(pub));
   // SPA deep link for shared reports: /r/<token>
-  app.get('/r/:token', (req, res) => res.sendFile(join(pub, 'index.html')));
+  router.get('/r/:token', (req, res) => res.sendFile(join(pub, 'index.html')));
+  app.use(base, router);
 
   return app;
 }

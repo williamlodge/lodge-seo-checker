@@ -73,6 +73,7 @@ export function createApp(opts = {}) {
     crawlImpl = defaultCrawl,
     imageSampler = defaultImageSampler,
     notify = defaultNotify,
+    allowPrivate = false,
   } = opts;
 
   const db = openDb(dbPath);
@@ -142,7 +143,7 @@ export function createApp(opts = {}) {
 
   app.post('/api/scan', (req, res) => {
     const url = String(req.body?.url ?? '').trim();
-    if (!isPublicHttpUrl(url)) {
+    if (!isPublicHttpUrl(url) && !(allowPrivate && /^https?:\/\//.test(url))) {
       return res.status(400).json({ error: 'Provide a valid public http(s) URL' });
     }
     const norm = normalizeUrl(url);

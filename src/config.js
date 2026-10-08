@@ -1,0 +1,9 @@
+export const MAX_PAGES = 100;
+export const MAX_DEPTH = 5;
+export const SCAN_TIMEOUT_MS = 180000;
+export const REQUEST_TIMEOUT_MS = 10000;
+export const MAX_REDIRECTS = 5;
+export const POLITENESS_MS = 2000;
+export const MAX_CONCURRENT_SCANS = 2;
+export const SCAN_RATE_PER_HOUR = 3;
+export const USER_AGENT = 'Mozilla/5.0 (compatible; ArcadiaAudit/1.0; +https://arcadiawebsolutions.com/audit/bot)';

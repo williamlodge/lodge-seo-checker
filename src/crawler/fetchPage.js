@@ -1,13 +1,17 @@
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from '../config.js';
+import { checkUrlHost } from '../lib/safeFetch.js';
 
 const MAX_BODY = 5 * 1024 * 1024;
 
-export async function fetchPage(url, { timeoutMs = REQUEST_TIMEOUT_MS, maxRedirects = 5 } = {}) {
+export async function fetchPage(url, { timeoutMs = REQUEST_TIMEOUT_MS, maxRedirects = 5, allowPrivate = false } = {}) {
   const redirectChain = [];
   let current = url;
   let truncated = false;
 
   for (let hop = 0; hop <= maxRedirects; hop++) {
+    if (!allowPrivate && !(await checkUrlHost(current))) {
+      return { finalUrl: current, status: 0, redirectChain, headers: {}, body: '', truncated, error: `blocked: non-public host ${new URL(current).hostname}` };
+    }
     let res;
     try {
       res = await fetch(current, {

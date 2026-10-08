@@ -54,3 +54,14 @@ describe('sameHost', () => {
     expect(sameHost('https://a.com/', 'https://b.com/')).toBe(false);
   });
 });
+
+describe('isPublicHttpUrl port policy', () => {
+  it('rejects non-default ports', () => {
+    expect(isPublicHttpUrl('https://example.com:8080/')).toBe(false);
+    expect(isPublicHttpUrl('http://example.com:9000/')).toBe(false);
+  });
+  it('accepts default and absent ports', () => {
+    expect(isPublicHttpUrl('https://example.com:443/')).toBe(true);
+    expect(isPublicHttpUrl('https://example.com/')).toBe(true);
+  });
+});

@@ -95,3 +95,16 @@ describe('indexability checks', () => {
     expect([1, 2, 3]).toContain(x.effort);
   });
 });
+
+describe('crawl-cap gating for sitemap checks', () => {
+  it('IDX-5/IDX-6 do not flag uncrawled sitemap URLs when crawl hit the page cap', () => {
+    const f = runIndexabilityChecks({ pages: [pg(`${B}/`)], sitemapUrls: [`${B}/never-crawled`, `${B}/also-not`], crawlLimitHit: true, robotsBlockedUrls: [] });
+    expect(f.find((r) => r.checkId === 'IDX-5')).toBeUndefined();
+    expect(f.find((r) => r.checkId === 'IDX-6')).toBeUndefined();
+  });
+  it('IDX-5/IDX-6 still flag when crawl completed fully', () => {
+    const f = runIndexabilityChecks({ pages: [pg(`${B}/`)], sitemapUrls: [`${B}/never-crawled`], crawlLimitHit: false, robotsBlockedUrls: [] });
+    expect(f.find((r) => r.checkId === 'IDX-5')).toBeDefined();
+    expect(f.find((r) => r.checkId === 'IDX-6')).toBeDefined();
+  });
+});

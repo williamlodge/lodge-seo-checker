@@ -48,7 +48,7 @@ afterAll(async () => { await new Promise((r) => server.close(r)); });
 
 describe('crawl', () => {
   it('BFS respects depth 5 and robots disallow, parses sitemap', async () => {
-    const r = await crawl(`${base}/`, { politenessMs: 1 });
+    const r = await crawl(`${base}/`, { politenessMs: 1, allowPrivate: true });
     const urls = r.pages.map((p) => p.url);
     expect(urls).toContain(`${base}/`);
     expect(urls).toContain(`${base}/a1`);
@@ -64,14 +64,22 @@ describe('crawl', () => {
   });
 
   it('caps at maxPages and flags crawlLimitHit', async () => {
-    const r = await crawl(`${base}/many`, { politenessMs: 1, maxPages: 10 });
+    const r = await crawl(`${base}/many`, { politenessMs: 1, maxPages: 10, allowPrivate: true });
     expect(r.pages.length).toBe(10);
     expect(r.crawlLimitHit).toBe(true);
   });
 
   it('stops at scan deadline and returns what it has', async () => {
-    const r = await crawl(`${base}/a`, { politenessMs: 50, scanTimeoutMs: 60 });
+    const r = await crawl(`${base}/a`, { politenessMs: 50, scanTimeoutMs: 60, allowPrivate: true });
     expect(r.pages.length).toBeGreaterThanOrEqual(1);
     expect(r.crawlLimitHit).toBe(true);
+  });
+});
+
+describe('crawl robotsBlockedUrls', () => {
+  it('returns queued URLs disallowed by robots', async () => {
+    const r = await crawl(`${base}/`, { politenessMs: 1, allowPrivate: true });
+    expect(r.robotsBlockedUrls).toContain(`${base}/private/secret`);
+    expect(r.pages.map((p) => p.url)).not.toContain(`${base}/private/secret`);
   });
 });

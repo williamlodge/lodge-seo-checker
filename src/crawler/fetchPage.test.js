@@ -34,7 +34,7 @@ afterAll(async () => { await new Promise((r) => server.close(r)); });
 
 describe('fetchPage', () => {
   it('returns final URL, status, headers, body', async () => {
-    const r = await fetchPage(`${base}/`);
+    const r = await fetchPage(`${base}/`, { allowPrivate: true });
     expect(r.status).toBe(200);
     expect(r.finalUrl).toBe(`${base}/`);
     expect(r.body).toContain('ok');
@@ -42,7 +42,7 @@ describe('fetchPage', () => {
   });
 
   it('follows a 3-hop chain recording each hop', async () => {
-    const r = await fetchPage(`${base}/r1`);
+    const r = await fetchPage(`${base}/r1`, { allowPrivate: true });
     expect(r.status).toBe(200);
     expect(r.redirectChain.length).toBeGreaterThanOrEqual(3);
     expect(r.redirectChain[0]).toContain('/r1');
@@ -50,30 +50,56 @@ describe('fetchPage', () => {
   });
 
   it('stops after 6 hops (MAX_REDIRECTS=5 follows) and marks truncation of chain', async () => {
-    const r = await fetchPage(`${base}/hop1`);
+    const r = await fetchPage(`${base}/hop1`, { allowPrivate: true });
     expect(r.redirectChain.length).toBe(6);
     expect(r.status).toBe(302);
   });
 
   it('stops redirect loops without hanging', async () => {
-    const r = await fetchPage(`${base}/loop-a`);
+    const r = await fetchPage(`${base}/loop-a`, { allowPrivate: true });
     expect(r.status).toBe(302);
     expect(r.redirectChain.length).toBeLessThanOrEqual(6);
   });
 
   it('records 404 status without throwing', async () => {
-    const r = await fetchPage(`${base}/missing`);
+    const r = await fetchPage(`${base}/missing`, { allowPrivate: true });
     expect(r.status).toBe(404);
   });
 
   it('returns error field on timeout instead of throwing', async () => {
-    const r = await fetchPage(`${base}/slow`, { timeoutMs: 300 });
+    const r = await fetchPage(`${base}/slow`, { allowPrivate: true, timeoutMs: 300 });
     expect(r.error).toBeTruthy();
   });
 
   it('truncates bodies over 5MB and flags truncated', async () => {
-    const r = await fetchPage(`${base}/big`);
+    const r = await fetchPage(`${base}/big`, { allowPrivate: true });
     expect(r.truncated).toBe(true);
     expect(r.body.length).toBeLessThanOrEqual(5 * 1024 * 1024);
+  });
+});
+
+describe('fetchPage SSRF guard', () => {
+  it('blocks loopback targets when allowPrivate is false', async () => {
+    const r = await fetchPage(`${base}/`, { allowPrivate: false });
+    expect(r.error).toMatch(/blocked/);
+    expect(r.body).toBe('');
+  });
+  it('fetches normally with allowPrivate: true', async () => {
+    const r = await fetchPage(`${base}/`, { allowPrivate: true });
+    expect(r.status).toBe(200);
+  });
+  it('blocks redirect targets pointing at private hosts', async () => {
+    const srv = http.createServer((req, res) => {
+      if (req.url === '/redir') { res.writeHead(302, { location: 'http://192.168.0.10/secret' }); res.end(); }
+      else { res.writeHead(200); res.end('internal'); }
+    });
+    await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+    const redirBase = `http://127.0.0.1:${srv.address().port}`;
+    const r = await fetchPage(`${redirBase}/redir`, { allowPrivate: false });
+    expect(r.error).toMatch(/blocked/);
+    // the private target was never fetched
+    const probe = await fetchPage(`${redirBase}/never`, { allowPrivate: true });
+    expect(probe.status).toBe(200);
+    await new Promise((r) => srv.close(r));
   });
 });

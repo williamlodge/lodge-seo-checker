@@ -1,13 +1,20 @@
 import robotsParser from 'robots-parser';
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from '../config.js';
+import { checkUrlHost } from '../lib/safeFetch.js';
 
-export async function loadRobots(origin) {
+const MAX_ROBOTS_BYTES = 1024 * 1024;
+
+export async function loadRobots(origin, { allowPrivate = false } = {}) {
   const fallback = (fetchError) => ({
     isAllowed: () => true,
     crawlDelayMs: 0,
     sitemapUrls: [],
     fetchError,
   });
+
+  if (!allowPrivate && !(await checkUrlHost(`${origin}/robots.txt`))) {
+    return fallback('blocked: non-public host');
+  }
 
   let res;
   try {
@@ -25,7 +32,20 @@ export async function loadRobots(origin) {
 
   let text;
   try {
-    text = await res.text();
+    const len = Number(res.headers.get('content-length') ?? 0);
+    if (len > MAX_ROBOTS_BYTES) return fallback('robots.txt too large (>1MB)');
+    const reader = res.body?.getReader();
+    if (!reader) { text = ''; }
+    else {
+      const dec = new TextDecoder();
+      text = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += dec.decode(value, { stream: true });
+        if (text.length > MAX_ROBOTS_BYTES) { await reader.cancel(); break; }
+      }
+    }
   } catch (err) {
     return fallback(String(err?.message ?? err));
   }

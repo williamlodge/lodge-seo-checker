@@ -86,11 +86,14 @@ export function runIndexabilityChecks(crawlResult) {
     }));
   }
 
-  // IDX-5: sitemap hygiene — sitemap URLs that 404 or redirect
+  // IDX-5: sitemap hygiene — sitemap URLs that 404 or redirect.
+  // Only judge URLs the crawl actually verified; when the page cap was hit,
+  // uncrawled sitemap URLs are unknown — flagging them would be noise.
+  const crawlCapped = crawlResult.crawlLimitHit === true;
   const byUrl = new Map(pages.map((p) => [p.url, p]));
   const badSitemap = [...smSet].filter((u) => {
     const p = byUrl.get(u);
-    if (!p) return true; // in sitemap, never fetched/crawled OK — flagged
+    if (!p) return !crawlCapped; // in sitemap, never fetched — flagged only for complete crawls
     return p.statusCode >= 400 || p.redirectChain.length > 1;
   });
   if (badSitemap.length) {
@@ -110,7 +113,9 @@ export function runIndexabilityChecks(crawlResult) {
   // IDX-6: orphan pages — in sitemap but zero internal inlinks
   const inlinks = new Map();
   for (const p of pages) for (const l of p.linksOut) inlinks.set(l, (inlinks.get(l) ?? 0) + 1);
-  const orphans = [...smSet].filter((u) => (inlinks.get(u) ?? 0) === 0);
+  const orphans = crawlCapped
+    ? [] // orphan detection is unreliable on a capped crawl
+    : [...smSet].filter((u) => (inlinks.get(u) ?? 0) === 0);
   if (orphans.length) {
     findings.push(finding('IDX-6', 'warning', {
       title: `${orphans.length} orphan page${orphans.length > 1 ? 's' : ''} — in the sitemap but not linked internally`,

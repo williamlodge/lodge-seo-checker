@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { openDb } from './db/index.js';
 import { isPublicHttpUrl, normalizeUrl } from './lib/normalize.js';
 import { rateLimit, ipHash } from './lib/rateLimit.js';
+import { checkUrlHost } from './lib/safeFetch.js';
 import { crawl as defaultCrawl } from './crawler/crawl.js';
 import { runIndexabilityChecks } from './checks/indexability.js';
 import { runOnPageChecks } from './checks/onpage.js';
@@ -37,7 +38,7 @@ function pageRow(p) {
   };
 }
 
-async function defaultImageSampler(pages) {
+async function defaultImageSampler(pages, { allowPrivate = false } = {}) {
   // HEAD-sample up to 30 unique image URLs; record those over 500 KB per page
   const perPage = new Map();
   const seen = new Set();
@@ -74,10 +75,13 @@ export function createApp(opts = {}) {
     imageSampler = defaultImageSampler,
     notify = defaultNotify,
     allowPrivate = false,
+    hostValidator = checkUrlHost,
   } = opts;
+  // thread the private-host bypass into every outbound path
 
   const db = openDb(dbPath);
   const app = express();
+  app.set('trust proxy', 1); // loopback LiteSpeed reverse proxy
   app.use(express.json());
 
   // ---- scan queue: max N concurrent, overflow waits (still accepted 202) ----
@@ -101,13 +105,14 @@ export function createApp(opts = {}) {
     try {
       db.updateScanStatus(scanId, { status: 'crawling', started_at: new Date().toISOString() });
       const result = await crawlImpl(url, {
+        allowPrivate,
         onProgress: (crawled, queued) => {
           db.updateScanStatus(scanId, { pages_crawled: crawled, pages_discovered: crawled + queued });
         },
       });
       db.updateScanStatus(scanId, { status: 'analyzing' });
 
-      const bigImages = await imageSampler(result.pages);
+      const bigImages = await imageSampler(result.pages, { allowPrivate });
       for (const p of result.pages) {
         const srcs = bigImages.get(p.url) ?? [];
         p.bigImageSrcs = srcs;
@@ -141,7 +146,7 @@ export function createApp(opts = {}) {
     keyFn: (req) => `scan:${ipHash(req)}`,
   });
 
-  app.post('/api/scan', (req, res) => {
+  app.post('/api/scan', async (req, res) => {
     const url = String(req.body?.url ?? '').trim();
     if (!isPublicHttpUrl(url) && !(allowPrivate && /^https?:\/\//.test(url))) {
       return res.status(400).json({ error: 'Provide a valid public http(s) URL' });
@@ -149,6 +154,9 @@ export function createApp(opts = {}) {
     const norm = normalizeUrl(url);
     if (DENYLIST.has(norm.host)) {
       return res.status(400).json({ error: 'This domain is not eligible for scanning' });
+    }
+    if (!allowPrivate && !(await hostValidator(norm.href))) {
+      return res.status(400).json({ error: 'This host cannot be scanned' });
     }
     const rl = scanLimiter.check(req);
     if (!rl.allowed) return res.status(429).json({ error: 'Rate limit exceeded — try again later' });

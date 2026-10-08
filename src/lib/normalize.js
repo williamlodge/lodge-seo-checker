@@ -27,6 +27,8 @@ export function isPublicHttpUrl(input) {
     return false;
   }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+  const port = u.port;
+  if (port && !((u.protocol === 'https:' && port === '443') || (u.protocol === 'http:' && port === '80'))) return false;
   const h = u.hostname.toLowerCase();
   if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local')) return false;
   if (h.includes(':')) return false; // IPv6 literals: no allowlist support in v1

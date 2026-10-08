@@ -85,3 +85,10 @@ describe('parsePage viewport and image srcs', () => {
     expect(noVp.imageSrcs).toEqual([]);
   });
 });
+
+describe('parsePage security headers', () => {
+  it('captures HSTS header for TQ-2', () => {
+    const r = parsePage({ url: 'https://ex.com/h', finalUrl: 'https://ex.com/h', status: 200, redirectChain: [], headers: { 'strict-transport-security': 'max-age=31536000' }, body: '<html></html>' });
+    expect(r.headers['strict-transport-security']).toBe('max-age=31536000');
+  });
+});

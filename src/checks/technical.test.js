@@ -83,3 +83,10 @@ describe('technical checks', () => {
     }
   });
 });
+
+describe('TQ-2 with real headers', () => {
+  it('does not fire when HSTS is present', () => {
+    const r = runTechnicalChecks({ pages: [pg(`${B}/`, { headers: { 'strict-transport-security': 'max-age=31536000' } })], sitemapUrls: [`${B}/s.xml`], crawlLimitHit: false }, {});
+    expect(r.find((x) => x.checkId === 'TQ-2')).toBeUndefined();
+  });
+});

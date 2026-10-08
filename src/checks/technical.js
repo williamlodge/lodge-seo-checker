@@ -25,7 +25,7 @@ export function runTechnicalChecks(crawlResult, robotsInfo = {}) {
   }
 
   // TQ-2: security headers (informational)
-  if (home && !(home.headers ?? {}).hsts) {
+  if (home && !(home.headers ?? {})['strict-transport-security']) {
     findings.push(mk('TQ-2', 'opportunity', {
       title: 'Baseline security headers not fully set',
       why: 'Headers like HSTS, X-Content-Type-Options and a Referrer-Policy harden the site cheaply and are table stakes for a trustworthy domain.',

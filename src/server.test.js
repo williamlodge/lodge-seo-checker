@@ -25,6 +25,7 @@ function makeApp() {
     crawlImpl: fakeCrawl,
     notify: async () => {},
     imageSampler: async () => new Map(),
+    hostValidator: async () => true,
   });
 }
 
@@ -100,5 +101,21 @@ describe('scan API', () => {
   it('unknown token 404s', async () => {
     const r = await request(app).get('/api/report/doesnotexist1234567890');
     expect(r.status).toBe(404);
+  });
+});
+
+describe('rate limiting behind reverse proxy', () => {
+  it('buckets per X-Forwarded-For IP', async () => {
+    const app = makeApp();
+    for (let i = 0; i < 3; i++) {
+      const r = await request(app).post('/api/scan').set('X-Forwarded-For', '9.9.9.0').send({ url: `https://fwd${i}.example.com/` });
+      expect(r.status).toBe(202);
+    }
+    // a different client is not affected by the previous three
+    const other = await request(app).post('/api/scan').set('X-Forwarded-For', '8.8.8.8').send({ url: 'https://other.example.com/' });
+    expect(other.status).toBe(202);
+    // the same client as the first three hits the cap
+    const r4 = await request(app).post('/api/scan').set('X-Forwarded-For', '9.9.9.0').send({ url: 'https://again.example.com/' });
+    expect(r4.status).toBe(429);
   });
 });

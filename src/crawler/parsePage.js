@@ -126,6 +126,9 @@ export function parsePage({ url, finalUrl, status, redirectChain, headers, body 
     imgTotal,
     imageSrcs,
     hasViewport,
+    headers: {
+      'strict-transport-security': headers?.['strict-transport-security'] ?? headers?.['Strict-Transport-Security'] ?? null,
+    },
     bytesHtml: (body ?? '').length,
     jsonld,
     invalidJsonld,

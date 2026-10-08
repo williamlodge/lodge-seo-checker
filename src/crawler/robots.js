@@ -36,6 +36,7 @@ export async function loadRobots(origin) {
       isAllowed: (url) => parser.isAllowed(url, USER_AGENT) !== false,
       crawlDelayMs: Math.round((parser.getCrawlDelay(USER_AGENT) ?? 0) * 1000),
       sitemapUrls: parser.getSitemaps ? parser.getSitemaps() : parser.sitemaps ?? [],
+      robotsTxt: text,
     };
   } catch (err) {
     return fallback(`robots parse error: ${err?.message ?? err}`);

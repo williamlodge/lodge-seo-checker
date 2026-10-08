@@ -74,3 +74,14 @@ describe('parsePage heading/image inventory', () => {
     expect(r.imagesMissingAlt).toBe(1);
   });
 });
+
+describe('parsePage viewport and image srcs', () => {
+  it('detects viewport meta and lists image srcs', () => {
+    const withVp = parsePage({ url: 'https://ex.com/i', finalUrl: 'https://ex.com/i', status: 200, redirectChain: [], headers: {}, body: '<html><head><meta name="viewport" content="width=device-width"></head><body><img src="/a.png" alt="x"><img src="/b.png"></body></html>' });
+    expect(withVp.hasViewport).toBe(true);
+    expect(withVp.imageSrcs).toEqual(['https://ex.com/a.png', 'https://ex.com/b.png']);
+    const noVp = parsePage({ url: 'https://ex.com/i', finalUrl: 'https://ex.com/i', status: 200, redirectChain: [], headers: {}, body: '<html><body></body></html>' });
+    expect(noVp.hasViewport).toBe(false);
+    expect(noVp.imageSrcs).toEqual([]);
+  });
+});

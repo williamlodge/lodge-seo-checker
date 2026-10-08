@@ -43,3 +43,10 @@ describe('loadRobots', () => {
     expect(r.fetchError).toBeTruthy();
   });
 });
+
+describe('loadRobots raw text', () => {
+  it('exposes raw robotsTxt body for TQ-8 analysis', async () => {
+    const r = await loadRobots(base);
+    expect(r.robotsTxt).toContain('Disallow: /private');
+  });
+});

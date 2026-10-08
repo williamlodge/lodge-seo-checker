@@ -74,10 +74,16 @@ export function parsePage({ url, finalUrl, status, redirectChain, headers, body 
 
   let imagesMissingAlt = 0;
   const imgTotal = $('img').length;
+  const imageSrcs = [];
   $('img').each((_, el) => {
     const alt = $(el).attr('alt');
     if (alt === undefined || !alt.trim()) imagesMissingAlt++;
+    const src = $(el).attr('src');
+    if (src && !src.startsWith('data:')) {
+      try { imageSrcs.push(new URL(src, finalUrl || url).href); } catch { /* skip */ }
+    }
   });
+  const hasViewport = $('meta[name="viewport"]').length > 0;
 
   const jsonld = [];
   let invalidJsonld = false;
@@ -118,6 +124,8 @@ export function parsePage({ url, finalUrl, status, redirectChain, headers, body 
     headings,
     imagesMissingAlt,
     imgTotal,
+    imageSrcs,
+    hasViewport,
     bytesHtml: (body ?? '').length,
     jsonld,
     invalidJsonld,

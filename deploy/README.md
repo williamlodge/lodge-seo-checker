@@ -17,17 +17,27 @@ pm2 start ecosystem.config.cjs
 pm2 save
 ```
 
-## Reverse proxy (OpenLiteSpeed)
+## Reverse proxy (OpenLiteSpeed) — DEPLOYED 2026-10-10
 
-Add a context to the arcadiawebsolutions.com vhost (WebAdmin → Virtual Host →
-Context → add Proxy):
+Live at `https://arcadiawebsolutions.com/audit/`. The proxy context is injected
+into the arcadia vhosts of `/usr/local/directadmin/data/users/admin/openlitespeed.conf`
+(DirectAdmin regenerates this file, so do NOT hand-edit for permanence):
 
-- URI: `/audit/`
-- Web Server: `http://127.0.0.1:5310`
-- (ensure Express sees the `/audit` prefix — set env `TRUST_PROXY=1` and mount
-  the app under the prefix, or rewrite the prefix off at the proxy)
+- `arcadiawebsolutions.com.cust_openlitespeed` holds the declarative copy (for
+  the next DA template rebuild).
+- `/root/ensure_seochecker_ols.sh` (cron, every 10 min) re-injects the block
+  and restarts OLS if DA's rewrite drops it.
 
-Then the tool lives at `https://arcadiawebsolutions.com/audit/`.
+pm2 start command actually used (ecosystem file's env lacked BASE_PATH):
+
+    BASE_PATH=/audit PORT=5310 SEOCHECKER_DB=/home/admin/projects/seo-checker/data/seo-checker.db \
+      pm2 start src/server.js --name seo-checker
+
+Ops notes learned during deploy:
+- pm2 rewrites process.argv — the server's entry guard checks `process.env.pm_id` too.
+- VPS resolv.conf was pointing only at Tailscale MagicDNS (100.100.100.100) which
+  intermittently fails public lookups; public resolvers (1.1.1.1, 8.8.8.8) were
+  put first. The scanner's DNS-level SSRF check depends on working resolution.
 
 ## Backups (nightly, joins existing rotation)
 

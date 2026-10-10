@@ -6,10 +6,13 @@
 <title>Arcadia Site Audit — free SEO &amp; GEO checker</title>
 <meta name="description" content="Free site audit: crawls your site and returns a prioritized, evidence-backed task list of SEO and AI-readiness fixes. No vague scores.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d6b4f'/%3E%3Ctext x='32' y='42' fill='white' font-family='monospace' font-size='28' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 <div id="root"></div>
-<script type="module" src="/app.js"></script>
+<script type="importmap">
+    {"imports": {"preact": "./vendor/preact.module.js", "htm": "./vendor/htm.module.js"}}
+    </script>
+    <script type="module" src="./app.js"></script>
 </body>
 </html>

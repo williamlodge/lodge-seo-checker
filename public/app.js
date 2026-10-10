@@ -1,6 +1,6 @@
-import { h, render } from 'https://esm.sh/preact@10.23.2';
-import { useState, useEffect, useCallback, useMemo } from 'https://esm.sh/preact@10.23.2/hooks';
-import {htm} from 'https://esm.sh/htm@3.1.1';
+import { h, render } from 'preact';
+import { useState, useEffect, useCallback, useMemo } from './vendor/hooks.module.js';
+import { htm } from 'htm';
 // alias htm bound to preact h
 const html = htm.bind(h);
 
@@ -183,7 +183,7 @@ function App() {
   const [scan, setScan] = useState(null); // {id, token}
   const [phase, setPhase] = useState('landing');
   useEffect(() => {
-    const m = location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/);
+    const m = location.pathname.match(/\/r\/([A-Za-z0-9_-]+)\/?$/);
     if (m) { setScan({ token: m[1] }); setPhase('report'); }
   }, []);
   if (phase === 'landing')

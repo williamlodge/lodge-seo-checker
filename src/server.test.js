@@ -41,9 +41,9 @@ describe('scan API', () => {
     }
   });
 
-  it('rejects denylisted hosts with 400', async () => {
+  it('accepts any valid public host (denylist removed)', async () => {
     const r = await request(app).post('/api/scan').send({ url: 'https://denylisted.example.com/' });
-    expect(r.status).toBe(400);
+    expect(r.status).toBe(202);
   });
 
   it('full flow: create → done → teaser → unlock → full', async () => {

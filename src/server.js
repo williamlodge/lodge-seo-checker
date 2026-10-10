@@ -12,9 +12,6 @@ import { runOnPageChecks } from './checks/onpage.js';
 import { runTechnicalChecks } from './checks/technical.js';
 import { buildReport } from './report/build.js';
 import { SCAN_RATE_PER_HOUR, MAX_CONCURRENT_SCANS } from './config.js';
-import denylist from '../denylist.json' with { type: 'json' };
-
-const DENYLIST = new Set(denylist);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function pageRow(p) {
@@ -155,9 +152,6 @@ export function createApp(opts = {}) {
       return res.status(400).json({ error: 'Provide a valid public http(s) URL' });
     }
     const norm = normalizeUrl(url);
-    if (DENYLIST.has(norm.host)) {
-      return res.status(400).json({ error: 'This domain is not eligible for scanning' });
-    }
     if (!allowPrivate && !(await hostValidator(norm.href))) {
       return res.status(400).json({ error: 'This host cannot be scanned' });
     }

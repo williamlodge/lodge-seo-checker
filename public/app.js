@@ -1,6 +1,6 @@
-import { h, render } from 'preact';
+import { h, render } from './vendor/preact.module.js';
 import { useState, useEffect, useCallback, useMemo } from './vendor/hooks.module.js';
-import { htm } from 'htm';
+import htm from './vendor/htm.module.js';
 // alias htm bound to preact h
 const html = htm.bind(h);
 

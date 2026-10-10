@@ -238,8 +238,10 @@ export function createApp(opts = {}) {
   return app;
 }
 
-// direct start (npm start)
-if (process.argv[1] && process.argv[1].endsWith('server.js')) {
+// direct start (npm start / pm2 fork): run the listener when this file is the
+// entry script. pm2 rewrites process.argv, so test both argv and pm_id.
+const isEntry = (process.argv[1] && process.argv[1].endsWith('server.js')) || !!process.env.pm_id;
+if (isEntry) {
   const port = Number(process.env.PORT ?? 5310);
   createApp().listen(port, '127.0.0.1', () => console.log(`seo-checker listening on 127.0.0.1:${port}`));
 }

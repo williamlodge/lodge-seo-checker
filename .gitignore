@@ -1,2 +1,7 @@
-.npm-cache/
 node_modules/
+.npm-cache/
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

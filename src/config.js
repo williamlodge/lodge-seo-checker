@@ -6,4 +6,4 @@ export const MAX_REDIRECTS = 5;
 export const POLITENESS_MS = 2000;
 export const MAX_CONCURRENT_SCANS = 2;
 export const SCAN_RATE_PER_HOUR = 3;
-export const USER_AGENT = 'Mozilla/5.0 (compatible; ArcadiaAudit/1.0; +https://arcadiawebsolutions.com/audit/bot)';
+export const USER_AGENT = 'Mozilla/5.0 (compatible; LodgeSiteAudit/1.0; +https://williamlodge.com/tools/site-audit/)';

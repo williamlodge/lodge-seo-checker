@@ -24,11 +24,9 @@ function Landing({ onStart }) {
   };
   return html`
     <div class="wrap">
-      <p class="brand">arcadia websolutions :: <b>site audit</b></p>
-      <h1>Find what's actually<br />hurting your site.</h1>
-      <p class="sub">We crawl up to 100 pages and return a prioritized task list — every finding backed by
-        evidence and a concrete fix. Includes AI-crawler readiness checks no commodity tool offers.
-        No vague "SEO score".</p>
+      <p class="brand">WL — 02 / WEB TOOL</p>
+      <h1>See what your site<br /><em>is missing.</em></h1>
+      <p class="sub">Scan up to 100 pages for search, technical and AI crawler issues. Get a prioritized task list with the affected URLs, evidence and a concrete fix for every finding.</p>
       <div class="panel">
         <form class="prompt" onSubmit=${submit}>
           <input placeholder="https://yourdomain.com" value=${url}
@@ -37,7 +35,7 @@ function Landing({ onStart }) {
         </form>
         ${err && html`<p class="err">${err}</p>`}
       </div>
-      <p class="muted">Free. ~1 minute. Report unlocked with your email.</p>
+      <p class="muted">Free to start. Most small sites take about a minute. The full report unlocks with your email.</p>
       <div class="footer">
         Methodology transparency: we check crawling, indexing, on-page and technical signals from raw HTML.
         We do not measure Core Web Vitals field data, backlinks, or keyword rankings.
@@ -59,10 +57,10 @@ function Progress({ id, onDone }) {
   }, [id]);
   return html`
     <div class="wrap">
-      <p class="brand">arcadia websolutions :: <b>site audit</b></p>
+      <p class="brand">WL — 02 / AUDIT IN PROGRESS</p>
       <div class="panel">
         <p class="term">
-          <b>$</b> arcadia-audit --crawl --respect-robots<span class="spin">▊</span>
+          <b>$</b> lodge-audit --crawl --respect-robots<span class="spin">▊</span>
           ${'\n'}status: ${s?.status ?? 'queued'}
           ${s?.pages_crawled ? `\npages crawled: ${s.pages_crawled}` : ''}
           ${s?.status === 'error' ? '\nsomething went wrong — try again' : ''}
@@ -107,8 +105,8 @@ function Health({ health }) {
 function Cta() {
   return html`
     <div class="cta">
-      <b>Want these fixed?</b> Arcadia handles SEO &amp; GEO cleanup as a flat-rate project —
-      <a href="https://arcadiawebsolutions.com/contact.html" target="_blank" rel="noopener">book a free call</a>.
+      <b>Want help fixing these?</b> William Lodge builds and improves sites, search systems and AI workflows —
+      <a href="https://williamlodge.com/contact.html">start a conversation</a>.
     </div>`;
 }
 
@@ -143,7 +141,7 @@ function Report({ token }) {
 
   return html`
     <div class="wrap">
-      <p class="brand">arcadia websolutions :: <b>site audit report</b></p>
+      <p class="brand">WL — 02 / SITE AUDIT REPORT</p>
       <p class="muted">${data.meta.requested_url} · ${data.meta.pages_crawled} pages crawled
         ${data.meta.crawl_limit_hit ? ' · page limit reached' : ''}</p>
       <${Health} health=${data.health} />
@@ -159,6 +157,7 @@ function Report({ token }) {
                    onInput=${(e) => setEmail(e.target.value)} />
             <button disabled=${busy || !email}>${busy ? 'unlocking…' : 'unlock full report'}</button>
           </form>
+          <p class="privacy-note">Your email and audited domain are stored with this report so William can follow up about the findings. No newsletter signup. <a href="mailto:hello@williamlodge.com?subject=Audit%20data%20removal">Request removal</a>.</p>
           ${err && html`<p class="err">${err}</p>`}
         </div>` : html`
         <div class="toolbar">
@@ -186,11 +185,20 @@ function App() {
     const m = location.pathname.match(/\/r\/([A-Za-z0-9_-]+)\/?$/);
     if (m) { setScan({ token: m[1] }); setPhase('report'); }
   }, []);
-  if (phase === 'landing')
-    return html`<${Landing} onStart=${(s) => { setScan(s); setPhase('progress'); }} />`;
-  if (phase === 'progress')
-    return html`<${Progress} id=${scan.id} onDone=${() => setPhase('report')} />`;
-  return html`<${Report} token=${scan.token} />`;
+  const content = phase === 'landing'
+    ? html`<${Landing} onStart=${(s) => { setScan(s); setPhase('progress'); }} />`
+    : phase === 'progress'
+      ? html`<${Progress} id=${scan.id} onDone=${() => setPhase('report')} />`
+      : html`<${Report} token=${scan.token} />`;
+  return html`<div>
+    <a class="skip-link" href="#root-content">Skip to audit</a>
+    <header class="site-nav">
+      <a class="site-brand" href="https://williamlodge.com/"><span class="site-mark">◉</span> WILLIAM LODGE <span class="site-slash">/</span> TOOLS</a>
+      <nav aria-label="William Lodge"><a href="https://williamlodge.com/builds.html">Builds</a><a href="https://williamlodge.com/contact.html">Contact</a></nav>
+      <a class="site-cta" href="https://williamlodge.com/contact.html">Work with William ↗</a>
+    </header>
+    <main id="root-content">${content}</main>
+  </div>`;
 }
 
 render(html`<${App} />`, document.getElementById('root'));

@@ -48,7 +48,8 @@ async function defaultImageSampler(pages, { allowPrivate = false } = {}) {
   const big = new Set();
   await Promise.all(todo.map(async (src) => {
     try {
-      const res = await fetch(src, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+      if (!allowPrivate && !(await checkUrlHost(src))) return;
+      const res = await fetch(src, { method: 'HEAD', redirect: 'manual', signal: AbortSignal.timeout(5000) });
       const len = Number(res.headers.get('content-length') ?? 0);
       if (len > 500 * 1024) big.add(src);
     } catch { /* ignore */ }
@@ -62,7 +63,7 @@ async function defaultImageSampler(pages, { allowPrivate = false } = {}) {
 
 function defaultNotify(lead) {
   // Replaced by SMTP path when env is configured; log otherwise.
-  console.log('[lead]', lead.email, lead.scanId);
+  console.log('[lead] scan', lead.scanId);
 }
 
 export function createApp(opts = {}) {
@@ -157,6 +158,7 @@ export function createApp(opts = {}) {
     }
     const rl = scanLimiter.check(req);
     if (!rl.allowed) return res.status(429).json({ error: 'Rate limit exceeded — try again later' });
+    if (waiting.length >= 10) return res.status(503).json({ error: 'Audit queue is full — try again later' });
     rl.record();
     const d = db.upsertDomain(norm.host);
     const scan = db.createScan({ domainId: d.id, requestedUrl: norm.href, options: {} });
